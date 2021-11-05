@@ -1,0 +1,27 @@
+<h4>Account Recharging </h4>
+<div class="row">
+    {{# if message }}
+    <h3 class="green text-">Actual Balance :{{message}}</h3>
+    {{/ if}}
+    {{# if error }}
+    <h3 class="red text-">{{error}}</h3>
+    {{/ if}}
+    
+    <form class="col s6" method="post" action="/recharge">
+        <div class="row">
+            <div class="input-field col s6">
+                <input id="email" type="text" name= "card" value="{{card}}" class="validate">
+                <label for="email">CARD NUMBER</label>
+                <span class="helper-text" data-error="wrong" data-success="right"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="input-field col s6">
+                <input id="email" type="number"  name="balance" class="validate">
+                <label for="email">RECHARGE AMOUNT</label>
+                <span class="helper-text" data-error="wrong" data-success="right"></span>
+            </div>
+        </div>
+        <input  class="btn " type="submit" value="Recharge">
+    </form>
+</div>

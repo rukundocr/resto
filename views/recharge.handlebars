@@ -1,0 +1,35 @@
+<h3>ADD USER</h3>
+<div class="row">
+    {{# if message }}
+     <h3 class="green text-">{{message}}</h3>
+    {{/ if}}
+    {{# if error }}
+    <h3 class="red text-">{{error}}</h3>
+    {{/ if}}
+
+    <form class="col s6" method ="post" action ="/save" novalidate>
+        <div class="row">
+            <div class="input-field col s6">
+                <input placeholder="Card number" id="first_name" value="{{card}}" name="card" type="text"
+                    class="validate">
+                <label for="first_name">Card Number</label>
+            </div>
+            <div class="input-field col s6">
+                <input placeholder="Placeholder" id="first_name" value="" name="firstname" type="text" class="validate" >
+                <label for="first_name">First Name</label>
+            </div>
+            <div class="input-field col s6">
+                <input id="last_name" type="text" name="lastname" value="" class="validate" >
+                <label for="last_name">Last Name</label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="input-field col s6">
+                <input id="email" type="text" name="email" class="validate" value="">
+                <label for="email">Email</label>
+            </div>
+        
+    </div>
+    <input id="email" type="submit" class="btn" value="add user">
+    </form>
+</div>

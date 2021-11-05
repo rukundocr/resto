@@ -1,21 +1,62 @@
+<h3>LIST OF USERS </h3>
+<a href="/user/new/addnew" type="button" class="btn indigo ">ADD USER</a>
+ {{#if message}}
+   <h4 class="red-text text-darken-4">{{mesage}}</h4>
+ {{/if}}
 
-<h3>USER ID </h3>
 
-{{#if rfid}}
 <div class="row">
-    <div class="col s6">
-        <h4 class="  green accent-4">{{rfid}}</h4>
-        <a href="/user/" type="button" class="btn indigo ">BACK TO USERS</a>
+    <div class="col s12">
+<table class="highlight" id="table1">
+    <thead>
+        <tr>
+           
+            <th>First Name</th>
+            <th>Last Name</th>
+            <td>CARD</td>
+            <th>Email</th>
+            <th>balance</th>
+            <th>ACTION</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {{#each results as |result key|}}
+
+        <tr>
+           
+            <td>{{result.firstname}}</td>
+            <td>{{result.lastname}}</td>
+            <td>{{result.card}}</td>
+            <td>{{result.email}}</td>
+            <td>{{result.balance}}</td>
+            <td>
+
+                <a href="/user/{{result._id}}" type="button" class="btn indigo">EDIT</a>
+                <a href="/user/delete/{{result_id}}" type="button" class="btn pink accent-3">DELETE</a>
+
+
+            </td>
+        </tr>
+    </tbody>
+    {{else}}
+
+      <p>No users to display</p>
+
+    {{/each}}
+    
+
+       
+</table>
+
     </div>
 </div>
-{{else}}
+<script>
+        $(document).ready(function () {
+            $('#table1').DataTable({
+});
+            $('select').formSelect();
+        });
+</script>
 
-<p>No card available</p>
-
-{{/if}}
-<form>
-
-<input type="text" name="card " value="{{rfid}}">
-
-
-</form>
+ 
