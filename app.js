@@ -4,6 +4,7 @@ const bodyparser = require("body-parser")
 const client = require('./models/client.js')
 var exphbs  = require('express-handlebars');
 const app = express();
+let reduction=2000;
 //MIDDLEWARE To parse incomming request
 app.use(bodyparser());
 app.use(bodyparser.urlencoded({ extended: false }))
@@ -33,7 +34,40 @@ app.get("/",(req,res,uy)=>{
 res.render("home");
 })
 
-//get user info 
+//payement of food // reduction of 2000frw on each card placacement
+app.get("/recharge", async (req,res)=>{
+    let {rfid,balance} = req.query;
+    try {
+        const user = await client.findOne({card:rfid})
+   if(!user){
+       console.log(`no user with :${rfid} found`)
+       return res.send(`no user with :${rfid} found on our server`)
+   }
+   
+
+    let newBalance = parseInt(user.balance) + parseInt(balance);
+    const savedBalance = await client.updateOne({balance:newBalance})
+    res.json({newbalance:newBalance})
+    } catch (error) {
+        console.log(error)
+    }
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//payement of food // reduction of 2000frw on each card placacement
 app.get("/card", async (req,res)=>{
     let {rfid,sn} = req.query;
     try {
@@ -43,10 +77,13 @@ app.get("/card", async (req,res)=>{
        return res.send(`no user with :${rfid} found on our server`)
    }
    
-        if(user){
-    console.log(`found. ID:${user.card}`)
-       res.redirect('/?',+rfid)
+        if(user.balance < reduction){
+       console.log(`Insufficient Balance.Only:${user.balance} available`)
+       return res.send(`Insufficient Balance.Only:${user.balance} available`)
    }
+    let newBalance = user.balance-reduction;
+    const savedBalance = await client.updateOne({balance:newBalance})
+    res.json({newbalance:newBalance})
     } catch (error) {
         console.log(error)
     }
