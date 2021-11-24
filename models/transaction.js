@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
- firstname: { type: String},
+  firstname: { type: String},
   lastname: { type: String},
   NID: { type: String},
   District: { type: String},
@@ -11,8 +11,11 @@ const userSchema = new Schema({
   Village: { type: String},
   Phone: { type: String},
   card: { type: String, required:true },
+  temperature: { type: Number},
+  status: { type: String},
+  time: { type: String},
 });
 
-const client = mongoose.model('client',userSchema);
+const transaction = mongoose.model('transaction',userSchema);
 
-module.exports = client
+module.exports = transaction

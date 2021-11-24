@@ -2,7 +2,9 @@ const express = require("express");
 const mongoose =require("mongoose");
 const bodyparser = require("body-parser")
 const client = require('./models/client.js')
+const transaction = require('./models/transaction.js')
 var exphbs  = require('express-handlebars');
+const Pusher = require("pusher");
 var fs = require("fs");
 const app = express();
 let reduction=2000;
@@ -13,7 +15,7 @@ app.use(bodyparser.urlencoded({ extended: false }))
 //app.use(express.urlencoded({extended: false}));
 const PORT = 4005;
 //connnect to db
-mongoose.connect('mongodb://localhost:27017/RESTAURENT',{ useUnifiedTopology: true, useNewUrlParser: true })
+mongoose.connect('mongodb://localhost:27017/PRAYERS',{ useUnifiedTopology: true, useNewUrlParser: true })
 .then(()=>
 console.log('connected to mongodb locally')
 )
@@ -25,13 +27,24 @@ console.error(error)
 
 //handlebars template engine 
 app.engine('handlebars', exphbs());
-app.set('view engine', 'handlebars');
+app.set('view engine', 'handlebars')
+
+//pusher 
+const pusher = new Pusher({
+  appId: "1301327",
+  key: "c869dddafabe66adaf63",
+  secret: "6c7cbd57197fe35afad1",
+  cluster: "mt1",
+  useTLS: true
+});
+
+
 
 //handle get request
 app.get("/", async (req,res)=>{
  try {
     
-      const results = await client.find().lean().limit(15);
+      const results = await client.find().lean().limit(100);
          res.render('home',{
          results,
       })
@@ -40,6 +53,38 @@ app.get("/", async (req,res)=>{
     res.json(error);
   }
 })
+
+//get normal prayers 
+app.get("/normal", async (req,res)=>{
+ try {
+     const status="Normal"
+      const results = await transaction.find({status:status}).lean().limit(100);
+      results.reverse();
+         res.render('normal',{
+         results,
+      })
+  } catch (error) {
+    console.log(error);
+    res.json(error);
+  }
+})
+
+app.get("/abnormal", async (req,res)=>{
+ try {
+     const status="Abnormal"
+      const results = await transaction.find({status:status}).lean().limit(100);
+      results.reverse();
+         res.render('abnormal',{
+         results,
+      })
+  } catch (error) {
+    console.log(error);
+    res.json(error);
+  }
+})
+
+
+
 
 app.get('/recharge',(req,res)=>{
    fs.readFile("card.txt", function (err, buf) {
@@ -67,45 +112,11 @@ app.get('/add',(req,res)=>{
 })
 
 //payement of food // reduction of 2000frw on each card placacement
-app.post("/recharge", async (req,res)=>{
-    let {card,balance} = req.body;
-    if(!card){
-        return res.render('add',{
-            error:"no card number entered. fill it "
-        })
-    }
-     if(!balance){
-        return res.render('add',{
-            error:"no balance filled in. fill it please!! "
-        })
-    }
-    try {
-        const user = await client.findOne({card:card})
-   if(!user){
-       console.log(`no user with :${user.card} found`)
-       return res.render("add",{
-           error:`no user with :${user.card} found on our server`
-       })
-   }
-
-    let newBalance = parseInt(user.balance) + parseInt(balance);
-    const savedBalance = await client.findOneAndUpdate({card:card},{balance:newBalance})
-    //const savedBalance = await client.updateOne({balance:newBalance})
-    fs.truncate("card.txt",(err,buff)=>{
-    console.log("delete card done");
-})
-    res.render("add",{
-        message:`User:${savedBalance.firstname}, Your balance ${newBalance}`
-    })
-    } catch (error) {
-        console.log(error)
-    }
-})
-
-//payement of food // reduction of 2000frw on each card placacement
 app.get("/card", async (req,res)=>{
-    let {rfid,sn} = req.query;
+    console.log(req.query);
+    let {rfid,temp} = req.query;
     const data = rfid
+    const temperature = parseFloat(temp);
     try {
 //delete file content if exits
 fs.truncate("card.txt",(err,buff)=>{
@@ -120,16 +131,86 @@ fs.truncate("card.txt",(err,buff)=>{
    const user = await client.findOne({card:rfid})
    if(!user){
        console.log(`no user with :${rfid} found`)
-       return res.send(`no user with :${rfid} found on our server`)
+       pusher.trigger("missing", "notFound", {
+       message:`GET REGISTERED FIRST AND TRY AGAIN !!`,
+       temperature:temperature
+});
+       return res.json({
+         status:"Unregistered",
+         temp:temperature  
+       })
+       
    }
-   
-        if(user.balance < reduction){
-       console.log(`Insufficient Balance.Only:${user.balance} available`)
-       return res.send(`Insufficient Balance.Only:${user.balance} available`)
-   }
-    let newBalance = user.balance-reduction;
-    const savedBalance = await client.findOneAndUpdate({card:rfid},{balance:newBalance})
-    res.send({newbalance:newBalance})
+    const today = new Date();   
+    const  time = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate() + '-'+ today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+     if(temperature>37){
+         let NewRecord = new transaction({
+             firstname:user.firstname,
+             lastname:user.lastname,
+             NID:user.NID,
+             District:user.District,
+             Sector:user.Sector,
+             Cell:user.Cell,
+             Village:user.Village,
+             Phone:user.Phone,
+             temperature:temperature ,
+             status:"Abnormal" ,
+             card:user.card,
+             time:time
+         })
+          pusher.trigger("mirembe", "my-event", {
+             firstname:user.firstname,
+             lastname:user.lastname,
+             NID:user.NID,
+             temperature:temperature ,
+             status:"Abnormal" ,
+             card:user.card,
+             id:user._id
+});
+         const savedUser = await NewRecord.save()
+         return res.json({
+             firstname:user.firstname,
+             lastname:user.lastname,
+             status:"Abnormal",
+             temp:temperature
+         })
+     }
+    
+    if(temperature<37){
+        
+         let NewRecord = new transaction({
+             firstname:user.firstname,
+             lastname:user.lastname,
+             NID:user.NID,
+             District:user.District,
+             Sector:user.Sector,
+             Cell:user.Cell,
+             Village:user.Village,
+             Phone:user.Phone,
+             temperature:temperature ,
+             status:"Normal" ,
+             card:user.card,
+             time:time
+         })
+            pusher.trigger("mirembe", "my-event", {
+             firstname:user.firstname,
+             lastname:user.lastname,
+             NID:user.NID,
+             temperature:temperature ,
+             status:"Normal" ,
+             card:user.card,
+             id:user._id
+});
+         const savedUser = await NewRecord.save()
+         return res.json({
+             firstname:user.firstname,
+             lastname:user.lastname,
+             status:"Normal",
+             temp:temperature
+         })
+     }
+
+      
     } catch (error) {
         console.log(error)
     }
@@ -137,10 +218,10 @@ fs.truncate("card.txt",(err,buff)=>{
 
 
 
-
+// Register new user 
 app.post("/save", async (req,res)=>{
     console.log(req.body);
-    let {card,firstname,lastname,email} = req.body;
+    let {card,firstname,lastname,NID,District,Sector,Cell,Village,Phone} = req.body;
      try {
       const user = await client.findOne({card:card})
    if(user){
@@ -153,8 +234,12 @@ app.post("/save", async (req,res)=>{
         const newuser = new client({
         firstname:firstname,
         lastname:lastname,
-        email:email,
-        balance:"0",
+        NID:NID,
+        District:District,
+        Sector:Sector,
+        Cell:Cell,
+        Village:Village,
+        Phone:Phone,
         card:card
     })
 
@@ -167,6 +252,73 @@ app.post("/save", async (req,res)=>{
          
      }
 })
+
+//delete abnormal records
+
+app.get("/abnormal/delete/:id", async (req,res)=>{
+    let {id}= req.params
+    console.log(id);
+    try {
+        let deletedRecord = await transaction.findByIdAndDelete({_id:id})
+        const status="Abnormal"
+        const results = await transaction.find({status:status}).lean().limit(15);
+         res.render('abnormal',{
+            message:"Record Deleted",
+            results
+        });
+        
+    } catch (error) {
+        console.log(error)
+        res.send('error occured while deleting  ......')
+    }
+
+})
+
+//delete normal records
+
+app.get("/normal/delete/:id", async (req,res)=>{
+    let {id}= req.params
+    console.log(id);
+    try {
+        let deletedRecord = await transaction.findByIdAndDelete({_id:id})
+        const status="Normal"
+        const results = await transaction.find({status:status}).lean().limit(15);
+        return res.render('normal',{
+            message:"Record Deleted",
+            results
+        });
+        
+    } catch (error) {
+        console.log(error)
+        res.send('error occured while deleting  ......')
+    }
+
+})
+
+//live attendance
+app.get('/live',(req,res)=>{
+    res.render("live");
+})
+
+// user details
+app.get('/details', async  (req,res)=>{
+    let card ="";
+    fs.readFile("card.txt", async function (err, buf) {
+  //console.log(buf.toString());
+    card= buf.toString();
+     try {
+         const results = await transaction.find({card:card}).lean().limit(30)
+         console.log(results);
+         res.render('details',{
+             results
+         })
+     } catch (error) {
+         console.log(error)
+     }
+})
+ 
+})
+
 
 app.use('*', (req,res)=>{
     res.send("404....resource not exist on server")

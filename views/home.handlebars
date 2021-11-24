@@ -1,5 +1,4 @@
-<h3>LIST OF USERS </h3>
-<a href="/user/new/addnew" type="button" class="btn indigo ">ADD USER</a>
+<h5>LIST OF CHURCH ATTENDANTS</h5>
  {{#if message}}
    <h4 class="red-text text-darken-4">{{mesage}}</h4>
  {{/if}}
@@ -7,15 +6,18 @@
 
 <div class="row">
     <div class="col s12">
-<table class="highlight" id="table1">
+<table class="highlight" >
     <thead>
         <tr>
-           
             <th>First Name</th>
             <th>Last Name</th>
             <td>CARD</td>
-            <th>Email</th>
-            <th>balance</th>
+            <td>NID</td>
+            <td>District</td>
+            <td>Sector</td>
+            <td>Cell</td>
+            <td>Village</td>
+            <td>Phone</td>
             <th>ACTION</th>
         </tr>
     </thead>
@@ -24,16 +26,21 @@
         {{#each results as |result key|}}
 
         <tr>
-           
+          
             <td>{{result.firstname}}</td>
             <td>{{result.lastname}}</td>
             <td>{{result.card}}</td>
-            <td>{{result.email}}</td>
-            <td>{{result.balance}}</td>
+            <td>{{result.NID}}</td>
+            <td>{{result.District}}</td>
+            <td>{{result.Sector}}</td>
+            <td>{{result.Cell}}</td>
+            <td>{{result.Village}}</td>
+            <td>{{result.Phone}}</td>
+            
             <td>
 
-                <a href="/user/{{result._id}}" type="button" class="btn indigo">EDIT</a>
-                <a href="/user/delete/{{result_id}}" type="button" class="btn pink accent-3">DELETE</a>
+              
+                <a href="/user/delete/{{result._id}}" type="button" class="btn pink accent-3">DELETE</a>
 
 
             </td>
@@ -50,6 +57,7 @@
 </table>
 
     </div>
+    
 </div>
 <script>
         $(document).ready(function () {

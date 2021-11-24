@@ -24,32 +24,39 @@
 
 <body>
     <div class="container">
+       
+
         <nav>
             <div class="nav-wrapper indigo">
-                <a href="#" class="brand-logo left">Supertech</a>
-                <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <a href="#" class="brand-logo center">STDS</a>
+                <a href="" class="sidenav-trigger" data-target="mobile">
+                    <i class="material-icons">menu</i>
+                </a>
+                <ul class="right hide-on-med-and-down">
                     <li><a href="/">Home</a></li>
-                    <li><a href="/recharge">ADD User</a></li>
-                    <li><a href="/add">Recharge</a></li>
-                    <li><a href="/logout">Logout</a></li>
+                    <li><a href="/recharge">ADD</a></li>
+                    <li><a href="/normal">Normal</a></li>
+                    <li><a href="/abnormal">Abnormal</a></li>
+                    <li><a href="/live">Live Attendance</a></li>
                 </ul>
-            </div>
+        </div>
         </nav>
-       
+
+                <ul class="sidenav " id="mobile">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/recharge">ADD</a></li>
+                    <li><a href="/normal">Normal</a></li>
+                    <li><a href="/abnormal">Abnormal</a></li>
+                    <li><a href="/live">Live Attendance</a></li>
+        
+                </ul>
+        
+        
         
         {{{body}}}
 
     <footer class="page-footer indigo">
-        <div class="container ">
-            <div class="row ">
-                <div class="col l6 s12 ">
-                    <h5 class="white-text">SUPERTECH ELECTRONICS LTD</h5>
-                    <p class="grey-text text-lighten-4">we sell all kind of electronics stuff
-                    </p>
-                </div>
-               
-            </div>
-        </div>
+       
         <div class="footer-copyright">
             <div class="container">
                 © 2021 SuperTech LTD
@@ -61,7 +68,16 @@
     
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.js"></script>
-
+<script>
+     document.addEventListener('DOMContentLoaded', function () {
+            var elems = document.querySelectorAll('.sidenav');
+            var instances = M.Sidenav.init(elems, options);
+        });
+          $(document).ready(function () {
+                $('.sidenav').sidenav();
+            });
+        
+</script>
 
 </body>
 

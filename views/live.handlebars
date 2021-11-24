@@ -1,0 +1,96 @@
+<script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+
+
+<h5 class="">LIVE ATTENDANCE & STATUS</h5>
+
+<div class="row" id="missing" style="display:none">
+    <div class="col s12 m6">
+        <div class="card red darken-1">
+            <div class="card-content white-text">
+                <span class="card-title" id="livedata"></span>
+                <h5>Your Body Temperature:<span id="temp"></span><span class=" black"> &nbsp;&nbsp;   &deg;C </span></h5>
+            <div class="card-action">
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<div class="row" id="liveShow">
+                <div class="col s12 m8">
+                    <div class="card blue-grey darken-1">
+                        <div class="card-content white-text">
+                            <span class="card-title center indigo">IDENTIFICATIONS</span>
+                            <h5 class="primary">First Name:<span id="firstname"></span></h5>
+                            <h5>Last Name:<span id="lastname"></span></h5>
+                            <h5>NID:<span id="NID"></span></h5>
+                            
+                            <h5>STATUS:<span id="status"></span></h5>
+                            <p class="card-panel teal lighten-2" >TEMPERATURE:<span id="temperature"></span><span>&deg;C</span></p>
+                        </div>
+                    
+                        <div class="card-action">
+                            <a href="/details">User History</a>
+                           
+                        </div>
+                    </div>
+                    
+                </div>
+
+</div>
+<script>
+
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher('c869dddafabe66adaf63', {
+        cluster: 'mt1'
+    });
+    document.getElementById("missing").style.display = "none";
+    document.getElementById("liveShow").style.display = "none";
+    const message = document.getElementById('livedata');
+    const tempp = document.getElementById('temp');
+    const firstnamep = document.getElementById('firstname');
+    const lastnamep = document.getElementById('lastname');
+    const emailp = document.getElementById('NID');
+    const temperaturep = document.getElementById('temperature');
+    const statusp = document.getElementById('status');
+    
+    
+    var channel = pusher.subscribe('mirembe');
+    channel.bind('my-event', function (data) {
+        document.getElementById("missing").style.display = "none";
+        document.getElementById("liveShow").style.display = "";
+        let msgContent = (JSON.stringify(data.message));
+        let firstname= (JSON.stringify(data.firstname));
+        let lastname = (JSON.stringify(data.lastname));
+        let email = (JSON.stringify(data.NID));
+        let temperature = (JSON.stringify(data.temperature));
+        let status = (JSON.stringify(data.status));
+        
+       // message.textContent = msgContent;
+        firstnamep.textContent= firstname;
+        lastnamep.textContent=lastname;
+        emailp.textContent=email;
+        temperaturep.textContent=temperature;
+        statusp.textContent=status
+
+    });
+    var channel1 = pusher.subscribe('missing');
+    channel1.bind('notFound', function (data) {
+        document.getElementById("liveShow").style.display = "none";
+        document.getElementById("missing").style.display = "";
+        let msgContent = (JSON.stringify(data.message));
+        let temp = (JSON.stringify(data.temperature));
+        message.textContent = msgContent;
+        tempp.textContent=temp;
+        
+    });
+
+
+
+
+
+
+</script>
