@@ -27,6 +27,7 @@ const klient = require('twilio')(AC_SSID, AauthToken);
 
 
 //connnect to db
+/*
 mongoose.connect('mongodb://localhost:27017/PRAYERS',{ useUnifiedTopology: true, useNewUrlParser: true })
 .then(()=>
 console.log('connected to mongodb locally')
@@ -36,6 +37,20 @@ console.log("not connected to db");
 console.error(error)
 }
 )
+*/
+
+
+mongoose.connect('mongodb+srv://rukundo:N0HtpmtxjnR2vYE8@cluster0-bg7kr.mongodb.net/test?retryWrites=true')
+//mongoose.connect('mongodb://localhost:27017/stuffdb', {useNewUrlParser: true} )
+//mongoose.connect(process.env.MONGO_URI,{useNewUrlParser: true} )
+.then(() => {
+   console.log('Successfully connected mongodb atlas )!');
+  })
+  .catch((error) => {
+    console.log('Unable to connect to mongodb atlas ');
+    console.error(error);
+ });
+
 
 //handlebars template engine 
 app.engine('handlebars', exphbs());
