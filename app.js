@@ -7,6 +7,11 @@ var exphbs  = require('express-handlebars');
 const Pusher = require("pusher");
 var fs = require("fs");
 const app = express();
+
+const http = require("http").Server(app);
+const io = require("socket.io")(http);
+
+require('dotenv').config();
 let reduction=2000;
 //MIDDLEWARE To parse incomming request
 app.use(bodyparser());
@@ -14,6 +19,13 @@ app.use(bodyparser.urlencoded({ extended: false }))
 //app.use(express.json());
 //app.use(express.urlencoded({extended: false}));
 const PORT = 4005;
+// twillio stuff 
+const AC_SSID = process.env.AC_SSID;
+const AauthToken = process.env.AauthToken;
+//const phone_number = "+12566854272";
+const klient = require('twilio')(AC_SSID, AauthToken);
+
+
 //connnect to db
 mongoose.connect('mongodb://localhost:27017/PRAYERS',{ useUnifiedTopology: true, useNewUrlParser: true })
 .then(()=>
@@ -45,9 +57,14 @@ app.get("/", async (req,res)=>{
  try {
     
       const results = await client.find().lean().limit(100);
+        const results1 = await transaction.find().lean().limit(100);
+
+      const data = JSON.stringify(results1);
+          
          res.render('home',{
          results,
       })
+   
   } catch (error) {
     console.log(error);
     res.json(error);
@@ -56,13 +73,25 @@ app.get("/", async (req,res)=>{
 
 //get normal prayers 
 app.get("/normal", async (req,res)=>{
+    
  try {
      const status="Normal"
       const results = await transaction.find({status:status}).lean().limit(100);
+      const data = JSON.stringify(results);
+
+      fs.truncate("./data/rwandaData.json",(err,buff)=>{
+    console.log("done");
+})
+//write new card number in the file 
+ fs.writeFile("./data/rwandaData.json", data, async  (err) => {
+  if (err) console.log(err);
+  console.log("Successfully Written to File.");
+});
       results.reverse();
          res.render('normal',{
          results,
       })
+
   } catch (error) {
     console.log(error);
     res.json(error);
@@ -70,6 +99,7 @@ app.get("/normal", async (req,res)=>{
 })
 
 app.get("/abnormal", async (req,res)=>{
+    
  try {
      const status="Abnormal"
       const results = await transaction.find({status:status}).lean().limit(100);
@@ -111,12 +141,24 @@ app.get('/add',(req,res)=>{
 
 })
 
+
+app.get("/semi",(req,res)=>{
+    res.render("semilive");
+})
+
+
+
 //payement of food // reduction of 2000frw on each card placacement
 app.get("/card", async (req,res)=>{
     console.log(req.query);
     let {rfid,temp} = req.query;
-    const data = rfid
+    const data = rfid;
     const temperature = parseFloat(temp);
+    if(temperature<30){
+         return res.json({
+             status:"nobody",
+         })
+     }
     try {
 //delete file content if exits
 fs.truncate("card.txt",(err,buff)=>{
@@ -135,6 +177,10 @@ fs.truncate("card.txt",(err,buff)=>{
        message:`GET REGISTERED FIRST AND TRY AGAIN !!`,
        temperature:temperature
 });
+   const msg= "server msg on socket";
+   io.sockets.emit("deal",{data:msg})
+
+   
        return res.json({
          status:"Unregistered",
          temp:temperature  
@@ -143,6 +189,7 @@ fs.truncate("card.txt",(err,buff)=>{
    }
     const today = new Date();   
     const  time = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate() + '-'+ today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+     
      if(temperature>37){
          let NewRecord = new transaction({
              firstname:user.firstname,
@@ -168,6 +215,18 @@ fs.truncate("card.txt",(err,buff)=>{
              id:user._id
 });
          const savedUser = await NewRecord.save()
+        //send sms
+        klient.messages.create({
+        body:`Alert! person name:${user.firstname}, ${user.lastname} has Over Temperatur of ${temperature}. Normal Temperature must be under 37 Celcius degrees.`,
+        to: "+250783289997",
+        from: "+12058838301"
+        }).then(response => {
+        console.log(response);
+    })
+        .catch(error => {
+            console.log(error);
+        })
+
          return res.json({
              firstname:user.firstname,
              lastname:user.lastname,
@@ -295,6 +354,25 @@ app.get("/normal/delete/:id", async (req,res)=>{
 
 })
 
+app.get("/user/delete/:id", async (req,res)=>{
+    let {id}= req.params
+    console.log(id);
+    try {
+        let deletedRecord = await client.findByIdAndDelete({_id:id})
+        const status=""
+        const results = await client.find().lean().limit(15);
+        return res.render('home',{
+            message:"",
+            results
+        });
+        
+    } catch (error) {
+        console.log(error)
+        res.send('error occured while deleting  ......')
+    }
+
+})
+
 //live attendance
 app.get('/live',(req,res)=>{
     res.render("live");
@@ -318,6 +396,14 @@ app.get('/details', async  (req,res)=>{
 })
  
 })
+
+io.sockets.on("connection",(socket)=>{
+  socket.on("disconnect",()=>{
+      console.log("disconnected client ");
+  })
+})
+
+
 
 
 app.use('*', (req,res)=>{
