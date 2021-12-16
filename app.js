@@ -18,7 +18,7 @@ app.use(bodyparser());
 app.use(bodyparser.urlencoded({ extended: false }))
 //app.use(express.json());
 //app.use(express.urlencoded({extended: false}));
-const PORT = 4005;
+const PORT = process.env.PORT || 4005;
 // twillio stuff 
 const AC_SSID = process.env.AC_SSID;
 const AauthToken = process.env.AauthToken;
