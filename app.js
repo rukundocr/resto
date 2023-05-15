@@ -8,8 +8,8 @@ const Pusher = require("pusher");
 var fs = require("fs");
 const app = express();
 
-const http = require("http").Server(app);
-const io = require("socket.io")(http);
+const Server= require("http").createServer(app);
+const io = require("socket.io")(Server,{cors:{origin:"*"}});
 
 require('dotenv').config();
 let reduction=2000;
@@ -27,8 +27,8 @@ const klient = require('twilio')(AC_SSID, AauthToken);
 
 
 //connnect to db
-/*
-mongoose.connect('mongodb://localhost:27017/PRAYERS',{ useUnifiedTopology: true, useNewUrlParser: true })
+
+mongoose.connect('mongodb://localhost:27017/STAFF',{ useUnifiedTopology: true, useNewUrlParser: true })
 .then(()=>
 console.log('connected to mongodb locally')
 )
@@ -37,9 +37,9 @@ console.log("not connected to db");
 console.error(error)
 }
 )
-*/
 
 
+/*
 mongoose.connect('mongodb+srv://rukundo:N0HtpmtxjnR2vYE8@cluster0-bg7kr.mongodb.net/test?retryWrites=true')
 //mongoose.connect('mongodb://localhost:27017/stuffdb', {useNewUrlParser: true} )
 //mongoose.connect(process.env.MONGO_URI,{useNewUrlParser: true} )
@@ -51,7 +51,7 @@ mongoose.connect('mongodb+srv://rukundo:N0HtpmtxjnR2vYE8@cluster0-bg7kr.mongodb.
     console.error(error);
  });
 
-
+*/
 //handlebars template engine 
 app.engine('handlebars', exphbs());
 app.set('view engine', 'handlebars')
@@ -64,8 +64,6 @@ const pusher = new Pusher({
   cluster: "mt1",
   useTLS: true
 });
-
-
 
 //handle get request
 app.get("/", async (req,res)=>{
@@ -169,11 +167,14 @@ app.get("/card", async (req,res)=>{
     let {rfid,temp} = req.query;
     const data = rfid;
     const temperature = parseFloat(temp);
-    if(temperature<30){
+    
+    if(data == ""){
          return res.json({
-             status:"nobody",
+             status:"nocard",
          })
      }
+
+
     try {
 //delete file content if exits
 fs.truncate("card.txt",(err,buff)=>{
@@ -188,12 +189,16 @@ fs.truncate("card.txt",(err,buff)=>{
    const user = await client.findOne({card:rfid})
    if(!user){
        console.log(`no user with :${rfid} found`)
-       pusher.trigger("missing", "notFound", {
+       /*pusher.trigger("missing", "notFound", {
        message:`GET REGISTERED FIRST AND TRY AGAIN !!`,
        temperature:temperature
-});
-   const msg= "server msg on socket";
-   io.sockets.emit("deal",{data:msg})
+});*/   
+let data ={
+temperature:temp,
+message:"GET REGISTERED FIRST AND TRY AGAIN !!"
+} 
+io.emit("missing",data)
+
 
    
        return res.json({
@@ -220,17 +225,20 @@ fs.truncate("card.txt",(err,buff)=>{
              card:user.card,
              time:time
          })
-          pusher.trigger("mirembe", "my-event", {
-             firstname:user.firstname,
-             lastname:user.lastname,
-             NID:user.NID,
-             temperature:temperature ,
-             status:"Abnormal" ,
-             card:user.card,
-             id:user._id
-});
+         let data ={
+            firstname:user.firstname,
+            lastname:user.lastname,
+            NID:user.NID,
+            temperature:temperature ,
+            status:"Abnormal" ,
+            card:user.card,
+            id:user._id
+         }
+          io.emit("my-event", data);
+             
          const savedUser = await NewRecord.save()
         //send sms
+        /*
         klient.messages.create({
         body:`Alert! person name:${user.firstname}, ${user.lastname} has Over Temperatur of ${temperature}. Normal Temperature must be under 37 Celcius degrees.`,
         to: "+250783289997",
@@ -241,6 +249,7 @@ fs.truncate("card.txt",(err,buff)=>{
         .catch(error => {
             console.log(error);
         })
+        */
 
          return res.json({
              firstname:user.firstname,
@@ -266,15 +275,16 @@ fs.truncate("card.txt",(err,buff)=>{
              card:user.card,
              time:time
          })
-            pusher.trigger("mirembe", "my-event", {
-             firstname:user.firstname,
-             lastname:user.lastname,
-             NID:user.NID,
-             temperature:temperature ,
-             status:"Normal" ,
-             card:user.card,
-             id:user._id
-});
+         let data ={
+            firstname:user.firstname,
+            lastname:user.lastname,
+            NID:user.NID,
+            temperature:temperature ,
+            status:"Normal" ,
+            card:user.card,
+            id:user._id
+         }
+          io.emit("my-event", data);
          const savedUser = await NewRecord.save()
          return res.json({
              firstname:user.firstname,
@@ -296,6 +306,12 @@ fs.truncate("card.txt",(err,buff)=>{
 app.post("/save", async (req,res)=>{
     console.log(req.body);
     let {card,firstname,lastname,NID,District,Sector,Cell,Village,Phone} = req.body;
+     if(card == "" || firstname == "" || lastname == ""){
+         return res.render("recharge",{
+             message:"fill missing field please!!",
+             card:card
+         })
+     }
      try {
       const user = await client.findOne({card:card})
    if(user){
@@ -340,14 +356,11 @@ app.get("/abnormal/delete/:id", async (req,res)=>{
             message:"Record Deleted",
             results
         });
-        
     } catch (error) {
         console.log(error)
         res.send('error occured while deleting  ......')
     }
-
 })
-
 //delete normal records
 
 app.get("/normal/delete/:id", async (req,res)=>{
@@ -385,9 +398,7 @@ app.get("/user/delete/:id", async (req,res)=>{
         console.log(error)
         res.send('error occured while deleting  ......')
     }
-
 })
-
 //live attendance
 app.get('/live',(req,res)=>{
     res.render("live");
@@ -409,22 +420,11 @@ app.get('/details', async  (req,res)=>{
          console.log(error)
      }
 })
- 
 })
-
-io.sockets.on("connection",(socket)=>{
-  socket.on("disconnect",()=>{
-      console.log("disconnected client ");
-  })
-})
-
-
-
-
 app.use('*', (req,res)=>{
     res.send("404....resource not exist on server")
 })
 
 
 
-app.listen(PORT,()=> console.log("app is running on port:" + PORT));
+Server.listen(PORT,()=> console.log("app is running on port:" + PORT));

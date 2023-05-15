@@ -1,5 +1,5 @@
 <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
-
+<script src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
 
 <h5 class="">LIVE ATTENDANCE & STATUS</h5>
 
@@ -15,8 +15,6 @@
     </div>
 </div>
 </div>
-
-
 <div class="row" id="liveShow">
                 <div class="col s12 m8">
                     <div class="card blue-grey darken-1">
@@ -32,21 +30,20 @@
                     
                         <div class="card-action">
                             <a href="/details">User History</a>
-                           
                         </div>
                     </div>
-                    
                 </div>
 
-</div>
+</div> 
+<h1></h1>
 <script>
+  const socket =io("localhost:4005")
+  socket.on("connection")
+  socket.emit("messageID","HELLO from socket io");
+  socket.on("missing",(data)=>{
+      //document.querySelector("h1").innerHTML = data;
+  })
 
-    // Enable pusher logging - don't include this in production
-    Pusher.logToConsole = true;
-
-    var pusher = new Pusher('c869dddafabe66adaf63', {
-        cluster: 'mt1'
-    });
     document.getElementById("missing").style.display = "none";
     document.getElementById("liveShow").style.display = "none";
     const message = document.getElementById('livedata');
@@ -57,9 +54,7 @@
     const temperaturep = document.getElementById('temperature');
     const statusp = document.getElementById('status');
     
-    
-    var channel = pusher.subscribe('mirembe');
-    channel.bind('my-event', function (data) {
+    socket.on('my-event', function (data) {
         document.getElementById("missing").style.display = "none";
         document.getElementById("liveShow").style.display = "";
         let msgContent = (JSON.stringify(data.message));
@@ -77,20 +72,14 @@
         statusp.textContent=status
 
     });
-    var channel1 = pusher.subscribe('missing');
-    channel1.bind('notFound', function (data) {
-        document.getElementById("liveShow").style.display = "none";
+ socket.on("missing",(data)=>{
+      //document.querySelector("h1").innerHTML = data;
+       document.getElementById("liveShow").style.display = "none";
         document.getElementById("missing").style.display = "";
         let msgContent = (JSON.stringify(data.message));
         let temp = (JSON.stringify(data.temperature));
         message.textContent = msgContent;
         tempp.textContent=temp;
-        
-    });
-
-
-
-
-
+  })
 
 </script>
